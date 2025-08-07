@@ -16,3 +16,8 @@ Proxy Everything with CF Workers ,万站互联
 
 ## about
 - https://t.me/+YfCVhGWyKxoyMDhl
+
+## 手机测试端
+- v1.0.0 无业务规则，全转发
+- v1.0.1 内置黑名单，黑名单列表中的站点不予以跳转
+- v1.0.2 限制网址长度，长度大于32个的字符串会直接截断，避免业务滥用
