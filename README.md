@@ -13,3 +13,6 @@ Proxy Everything with CF Workers ,万站互联
 
 ## 特别说明
 - 只要是CloudFlare本身不能访问到的网站，就无法反代
+
+## about
+- https://t.me/+YfCVhGWyKxoyMDhl
