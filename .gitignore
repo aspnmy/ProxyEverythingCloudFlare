@@ -170,7 +170,10 @@ dist
 
 .dev.vars
 .wrangle
-.wrangler/
+.wrangler/*
 
 .vscode
 .vscode/*
+
+node_modules
+node_modules/*
