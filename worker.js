@@ -1,3 +1,41 @@
+// 黑名单数组
+const BLACKLIST = BKLS
+
+// bind的数组
+let BINDLIST = "";
+
+// 检查 URL 是否在黑名单中
+function isBlacklisted(url) {
+  const hostname = new URL(url).hostname;
+  return BLACKLIST.some(blocked => hostname.includes(blocked));
+}
+
+// 检查 URL 是否包含非法参数
+function hasIllegalParams(url) {
+  const illegalPatterns = [
+    /<script/i,
+    /javascript:/i,
+    /onload/i,
+    /onerror/i,
+    /onclick/i,
+    /onmouseover/i,
+    /onfocus/i,
+    /onblur/i,
+    /onsubmit/i,
+    /onreset/i,
+    /onselect/i,
+    /onchange/i,
+    /eval\s*\(/i,
+    /document\.cookie/i,
+    /document\.write/i,
+    /\.innerHTML/i,
+    /\.outerHTML/i
+  ];
+  
+  const urlStr = url.toString();
+  return illegalPatterns.some(pattern => pattern.test(urlStr));
+}
+
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request));
 });
@@ -20,6 +58,35 @@ async function handleRequest(request) {
 
       // 判断用户输入的 URL 是否带有协议
       actualUrlStr = ensureProtocol(actualUrlStr, url.protocol);
+      
+      // 检查域名长度
+      const actualUrl = new URL(actualUrlStr);
+      if (actualUrl.hostname.length > 16) {
+          return jsonResponse({
+              error: 'Domain name length exceeds 16 characters.'
+          }, 400);
+      }
+
+      // 检查目标 URL 是否包含非法参数
+      if (hasIllegalParams(actualUrl)) {
+          // 将非法URL添加到BINDLIST中
+          if (BINDLIST) {
+              BINDLIST += "," + actualUrlStr;
+          } else {
+              BINDLIST = actualUrlStr;
+          }
+          
+          return jsonResponse({
+              error: 'Illegal parameters detected in URL.'
+          }, 400);
+      }
+
+      // 检查目标 URL 是否在黑名单中
+      if (isBlacklisted(actualUrlStr)) {
+          return jsonResponse({
+              error: 'Access to this website is blocked.'
+          }, 403);
+      }
 
       // 保留查询参数
       actualUrlStr += url.search;
@@ -180,6 +247,12 @@ function getRootHtml() {
           border-bottom: 1px solid #2c3e50 !important;
           box-shadow: 0 1px 0 0 #2c3e50 !important;
       }
+      .warning {
+          color: #ff5252;
+          font-size: 0.9em;
+          margin-top: 10px;
+          text-align: left;
+      }
       @media (prefers-color-scheme: dark) {
           body, html {
               background-color: #121212;
@@ -206,6 +279,9 @@ function getRootHtml() {
           label {
               color: #cccccc;
           }
+          .warning {
+              color: #ff8a80;
+          }
       }
   </style>
 </head>
@@ -223,6 +299,8 @@ function getRootHtml() {
                                   <label for="targetUrl">目标地址</label>
                               </div>
                               <button type="submit" class="btn waves-effect waves-light teal darken-2 full-width">跳转</button>
+                               <div class="warning">使用说明：被转发的域名长度必须小于16个字符串，请不要转发带有渗入代码的非法链接</div>
+                               <div class="warning">更多黑名单网址信息，查看github项目：https://github.com/aspnmy/CN-Malicious-website-list.git</div>
                           </form>
                       </div>
                   </div>
@@ -242,6 +320,3 @@ function getRootHtml() {
 </body>
 </html>`;
 }
-
-
-
