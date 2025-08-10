@@ -9,13 +9,13 @@ export default {
     const blacklistStr = await env.BKLS_STORE.get("BKLS");
     console.log("Blacklist from KV:", blacklistStr);
     if (blacklistStr) {
-      BLACKLIST = blacklistStr.split(',').filter(item => item !== '');
+      // 移除字符串中的单引号，然后按逗号分割
+      BLACKLIST = blacklistStr.replace(/'/g, '').split(',').filter(item => item !== '');
     } else {
       BLACKLIST = [];
     }
     
-    // 处理请求
-    return BLACKLIST;
+    
   }
 };
 
@@ -149,9 +149,9 @@ async function handleRequest(request, env) {
       // 将 BINDLIST 中的非法 URL 添加到 BLACKLIST 并更新 KV 存储
       if (BINDLIST.length > 0) {
           BLACKLIST = [...new Set([...BLACKLIST, ...BINDLIST])];
-          // 更新 KV 存储
+          // 更新 KV 存储，确保数据格式为 'url1','url2'
           if (env && env.BKLS_STORE) {
-              await env.BKLS_STORE.put("BKLS", BLACKLIST.join(','));
+              await env.BKLS_STORE.put("BKLS", BLACKLIST.map(url => `'${url}'`).join(','));
           }
           // 清空 BINDLIST
           BINDLIST = [];
