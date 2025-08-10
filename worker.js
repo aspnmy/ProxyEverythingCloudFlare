@@ -265,16 +265,16 @@ function getRootHtml() {
   <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js" as="script">
   <title>Proxy Everything</title>
   <link rel="icon" type="image/x-icon" href="https://image.cf.shdrr.org/favicon-02.ico" crossorigin="anonymous">
-  <meta name="Description" content="Proxy Everything with CF Workers.万战互联.">
+  <meta name="Description" content="Proxy Everything with CF Workers.万站互联.">
   <meta name="keywords" content="CF Worker, CF Worker API, Cloudflare Workers, Cloudflare CDN, CDNs, CDN, CDNJS, Google Fonts">
   <meta property="og:url" content="https://gateway.cf.shdrr.org/">
-  <meta property="og:site_name" content="Proxy Everything 万战互联.">
-  <meta property="og:description" content="Proxy Everything with CF Workers 万战互联..">
-  <meta property="og:title" content="Proxy Everything with CF Workers 万战互联..">
-  <meta property="og:description" content="Proxy Everything with CF Workers 万战互联..">
+  <meta property="og:site_name" content="Proxy Everything 万站互联.">
+  <meta property="og:description" content="Proxy Everything with CF Workers 万站互联..">
+  <meta property="og:title" content="Proxy Everything with CF Workers 万站互联..">
+  <meta property="og:description" content="Proxy Everything with CF Workers 万站互联..">
   <meta property="og:locale" content="zh-CN">
-  <meta property="og:title" content="Proxy Everything 万战互联.">
-  <meta property="og:description" content="Proxy Everything with CF Workers 万战互联..">
+  <meta property="og:title" content="Proxy Everything 万站互联.">
+  <meta property="og:description" content="Proxy Everything with CF Workers 万站互联..">
   <meta property="og:image" content="https://image.cf.shdrr.org/favicon-02.ico" crossorigin="anonymous">
   <meta name="robots" content="index, follow">
   <meta http-equiv="Content-Language" content="zh-CN">
@@ -366,7 +366,7 @@ function getRootHtml() {
               <div class="col s12 m8 offset-m2 l6 offset-l3">
                   <div class="card">
                       <div class="card-content">
-                          <span class="card-title center-align"><i class="material-icons left">link</i>Proxy Everything 万战互联</span>
+                          <span class="card-title center-align"><i class="material-icons left">link</i>Proxy Everything 万站互联</span>
                           <form id="urlForm" onsubmit="redirectToProxy(event)">
                               <div class="input-field">
                                   <input type="text" id="targetUrl" placeholder="Enter target URL here, no need to input protocol header" required>
@@ -374,7 +374,7 @@ function getRootHtml() {
                               </div>
                               <button type="submit" class="btn waves-effect waves-light teal darken-2 full-width">Go</button>
                                <div class="warning">Instructions: The forwarded domain name length must be less than 128 characters. Please do not forward illegal links with injected code.</div>
-                               <div class="warning">For more blacklist URL information, check the GitHub project: <a href="https://github.com/aspnmy/CN-Malicious-website-list.git"><img src="https://github.com/fluidicon.png">CN-Malicious-website-list</img></a></div>
+                               <div class="warning">For more blacklist URL information, check the GitHub project: <a href="https://github.com/aspnmy/CN-Malicious-website-list.git">CN-Malicious-website-list</a></div>
                           </form>
                       </div>
                   </div>
