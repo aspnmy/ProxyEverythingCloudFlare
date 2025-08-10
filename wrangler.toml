@@ -16,6 +16,12 @@ enabled = true
 
 # 生产环境配置
 [env.production]
+name = "proxyeverything-cf"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+compatibility_flags = [
+    "nodejs_compat"
+]
 kv_namespaces = [
   { binding = "BKLS_STORE", id = "8a39fb44a72a4aec97921cfac597d7d4" }
 ]
