@@ -271,7 +271,7 @@ function getRootHtml() {
   <meta name="robots" content="index, follow">
   <meta http-equiv="Content-Language" content="zh-CN">
   <link rel="apple-touch-icon-precomposed" sizes="120x120" href="https://about.gitea.com/gitea-text.svg@100w.webp" crossorigin="anonymous">
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
