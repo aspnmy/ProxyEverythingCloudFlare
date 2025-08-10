@@ -75,9 +75,9 @@ async function handleRequest(request, env) {
       
       // 检查域名长度
       const actualUrl = new URL(actualUrlStr);
-      if (actualUrl.hostname.length > 16) {
+      if (actualUrl.hostname.length > 128) {
           return jsonResponse({
-              error: 'Domain name length exceeds 16 characters.'
+              error: 'Domain name length exceeds 128 characters.'
           }, 400);
       }
 
@@ -320,7 +320,7 @@ function getRootHtml() {
                                   <label for="targetUrl">目标地址</label>
                               </div>
                               <button type="submit" class="btn waves-effect waves-light teal darken-2 full-width">跳转</button>
-                               <div class="warning">使用说明：被转发的域名长度必须小于16个字符串，请不要转发带有渗入代码的非法链接</div>
+                               <div class="warning">使用说明：被转发的域名长度必须小于128个字符串，请不要转发带有渗入代码的非法链接</div>
                                <div class="warning">更多黑名单网址信息，查看github项目：https://github.com/aspnmy/CN-Malicious-website-list.git</div>
                           </form>
                       </div>
