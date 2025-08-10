@@ -1,0 +1,32 @@
+{
+    "name": "cloudgatekeeper",
+    "version": "1.0.0",
+    "description": "A dynamic routing proxy system based on Cloudflare Workers with rule-based request handling",
+    "main": "index.js",
+    "scripts": {
+        "setup": "yarn install",
+        "login": "yarn wrangler login",
+        "dev": "npx wrangler dev",
+        "debug": "npx wrangler deploy",
+        "build:prod": "npx wrangler build --env production",
+        "deploy:prod": "npx wrangler deploy --env production",
+        "check:env": "node scripts/check-env.js",
+        "publish": "yarn check:env && yarn build:prod && yarn deploy:prod",
+        "format": "prettier --write 'src/*.{js,css,json,md}'",
+        "prestart": "node scripts/check-node.js"
+    },
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "@cloudflare/workers-types": "^4.20230710.1",
+        "wrangler": "^4.0.0"
+    },
+    "dependencies": {
+        "cloudgatekeeper": "file:"
+    },
+    "engines": {
+        "node": ">=20.14.0",
+        "yarn": ">=1.22.0"
+    },
+    "engineStrict": true
+}
