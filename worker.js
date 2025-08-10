@@ -7,7 +7,6 @@ export default {
   async fetch(request, env, ctx) {
     // 从 KV 中读取值
     const blacklistStr = await env.BKLS_STORE.get("BKLS");
-    console.log("Blacklist from KV:", blacklistStr);
     if (blacklistStr) {
       // 移除字符串中的单引号，然后按逗号分割
       BLACKLIST = blacklistStr.replace(/'/g, '').split(',').filter(item => item !== '');
@@ -15,14 +14,19 @@ export default {
       BLACKLIST = [];
     }
     
-    
+    return handleRequest(request, env);
   }
 };
 
 // 检查 URL 是否在黑名单中
 function isBlacklisted(url) {
-  const hostname = new URL(url).hostname;
-  return BLACKLIST.some(blocked => hostname.includes(blocked));
+  try {
+    const hostname = new URL(url).hostname;
+    return BLACKLIST.some(blocked => hostname.includes(blocked));
+  } catch (error) {
+    // 如果 URL 解析失败，直接检查原始 URL 是否在黑名单中
+    return BLACKLIST.some(blocked => url.includes(blocked));
+  }
 }
 
 // 检查 URL 是否包含非法参数
@@ -57,6 +61,15 @@ addEventListener('fetch', event => {
 
 async function handleRequest(request, env) {
   try {
+      // 从 KV 中读取值
+      const blacklistStr = await env.BKLS_STORE.get("BKLS");
+      if (blacklistStr) {
+        // 移除字符串中的单引号，然后按逗号分割
+        BLACKLIST = blacklistStr.replace(/'/g, '').split(',').filter(item => item !== '');
+      } else {
+        BLACKLIST = [];
+      }
+      
       const url = new URL(request.url);
 
       // 如果访问根目录，返回HTML
