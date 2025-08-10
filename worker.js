@@ -7,6 +7,7 @@ export default {
   async fetch(request, env, ctx) {
     // 从 KV 中读取值
     const blacklistStr = await env.BKLS_STORE.get("BKLS");
+    console.log("Blacklist from KV:", blacklistStr);
     if (blacklistStr) {
       BLACKLIST = blacklistStr.split(',').filter(item => item !== '');
     } else {
