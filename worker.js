@@ -139,6 +139,9 @@ async function handleRequest(request, env) {
           return handleRedirect(response, body);
       } else if (response.headers.get("Content-Type")?.includes("text/html")) {
           body = await handleHtmlContent(response, url.protocol, url.host, actualUrlStr);
+      } else {
+          // For non-HTML content, we need to properly handle the response body
+          body = await response.arrayBuffer();
       }
 
       // Create the modified response object
