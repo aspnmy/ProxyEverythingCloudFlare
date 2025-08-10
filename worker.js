@@ -72,11 +72,15 @@ async function handleRequest(request, env) {
 
       // 如果访问根目录，返回HTML
       if (url.pathname === "/") {
-          return new Response(getRootHtml(), {
+          const response = new Response(getRootHtml(), {
               headers: {
-                  'Content-Type': 'text/html; charset=utf-8'
+                  'Content-Type': 'text/html; charset=utf-8',
+                  'X-Content-Type-Options': 'nosniff'
               }
           });
+          // 添加禁用缓存的头部
+          setNoCacheHeaders(response.headers);
+          return response;
       }
 
       // 从请求路径中提取目标 URL
@@ -182,7 +186,7 @@ function ensureProtocol(url, defaultProtocol) {
 function handleRedirect(response, body) {
   const location = new URL(response.headers.get('location'));
   const modifiedLocation = `/${encodeURIComponent(location.toString())}`;
-  return new Response(body, {
+  const newResponse = new Response(body, {
       status: response.status,
       statusText: response.statusText,
       headers: {
@@ -190,6 +194,11 @@ function handleRedirect(response, body) {
           'Location': modifiedLocation
       }
   });
+  // 添加禁用缓存的头部
+  setNoCacheHeaders(newResponse.headers);
+  // 添加安全头部
+  newResponse.headers.set('X-Content-Type-Options', 'nosniff');
+  return newResponse;
 }
 
 // 处理 HTML 内容中的相对路径
@@ -197,8 +206,16 @@ async function handleHtmlContent(response, protocol, host, actualUrlStr) {
   const originalText = await response.text();
   const regex = new RegExp('((href|src|action)=["\'])/(?!/)', 'g');
   let modifiedText = replaceRelativePaths(originalText, protocol, host, new URL(actualUrlStr).origin);
-
-  return modifiedText;
+  const newResponse = new Response(modifiedText, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers
+  });
+  // 添加禁用缓存的头部
+  setNoCacheHeaders(newResponse.headers);
+  // 添加安全头部
+  newResponse.headers.set('X-Content-Type-Options', 'nosniff');
+  return newResponse;
 }
 
 // 替换 HTML 内容中的相对路径
@@ -209,12 +226,16 @@ function replaceRelativePaths(text, protocol, host, origin) {
 
 // 返回 JSON 格式的响应
 function jsonResponse(data, status) {
-  return new Response(JSON.stringify(data), {
+  const response = new Response(JSON.stringify(data), {
       status: status,
       headers: {
-          'Content-Type': 'application/json; charset=utf-8'
+          'Content-Type': 'application/json; charset=utf-8',
+          'X-Content-Type-Options': 'nosniff'
       }
   });
+  // 添加禁用缓存的头部
+  setNoCacheHeaders(response.headers);
+  return response;
 }
 
 // 过滤请求头
@@ -256,6 +277,11 @@ function getRootHtml() {
       body, html {
           height: 100%;
           margin: 0;
+          -webkit-text-size-adjust: 100%;
+          -ms-text-size-adjust: 100%;
+          text-size-adjust: 100%;
+          -webkit-mask-image: none;
+          mask-image: none;
       }
       .background {
           background-size: cover;
