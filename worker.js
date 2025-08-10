@@ -261,15 +261,16 @@ function getRootHtml() {
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js" as="script">
   <title>Proxy Everything 万站互联</title>
-  <link rel="icon" type="image/png" href="https://about.gitea.com/gitea-text.svg@100w.webp">
+  <link rel="icon" type="image/png" href="https://about.gitea.com/gitea-text.svg@100w.webp" crossorigin="anonymous">
   <meta name="Description" content="Proxy Everything with CF Workers.">
   <meta property="og:description" content="Proxy Everything with CF Workers.">
-  <meta property="og:image" content="https://about.gitea.com/gitea-text.svg@100w.webp">
+  <meta property="og:image" content="https://about.gitea.com/gitea-text.svg@100w.webp" crossorigin="anonymous">
   <meta name="robots" content="index, follow">
   <meta http-equiv="Content-Language" content="zh-CN">
-  <link rel="apple-touch-icon-precomposed" sizes="120x120" href="https://about.gitea.com/gitea-text.svg@100w.webp">
+  <link rel="apple-touch-icon-precomposed" sizes="120x120" href="https://about.gitea.com/gitea-text.svg@100w.webp" crossorigin="anonymous">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -314,6 +315,9 @@ function getRootHtml() {
           font-size: 0.9em;
           margin-top: 10px;
           text-align: left;
+          /* Optimize for LCP */
+          contain: layout style;
+          content-visibility: auto;
       }
       @media (prefers-color-scheme: dark) {
           body, html {
@@ -370,7 +374,7 @@ function getRootHtml() {
           </div>
       </div>
   </div>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js" async></script>
   <script>
       function redirectToProxy(event) {
           event.preventDefault();
