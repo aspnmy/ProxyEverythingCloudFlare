@@ -141,14 +141,20 @@ async function handleRequest(request, env) {
           body = await handleHtmlContent(response, url.protocol, url.host, actualUrlStr);
       } else {
           // For non-HTML content, we need to properly handle the response body
-          body = await response.arrayBuffer();
+          // Clone the response to avoid locking the body stream
+          const clonedResponse = response.clone();
+          body = await clonedResponse.arrayBuffer();
       }
 
       // Create the modified response object
+      // Create a new Headers object to avoid any potential issues with the original headers
+      const responseHeaders = new Headers(response.headers);
+      // Remove Content-Length header as it will be automatically set by the runtime
+      responseHeaders.delete('Content-Length');
       const modifiedResponse = new Response(body, {
           status: response.status,
           statusText: response.statusText,
-          headers: response.headers
+          headers: responseHeaders
       });
 
       // Add no-cache headers
