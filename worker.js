@@ -134,9 +134,16 @@ async function handleRequest(request, env) {
 
       // Handle redirects
       if ([301, 302, 303, 307, 308].includes(response.status)) {
-          body = response.body;
+          // For redirect responses, we need to handle the body properly
+          let redirectBody = response.body;
+          // For non-HTML content, we need to properly handle the response body
+          if (!response.headers.get("Content-Type")?.includes("text/html")) {
+              // Clone the response to avoid locking the body stream
+              const clonedResponse = response.clone();
+              redirectBody = await clonedResponse.arrayBuffer();
+          }
           // Create a new Response object to modify the Location header
-          return handleRedirect(response, body);
+          return handleRedirect(response, redirectBody);
       } else if (response.headers.get("Content-Type")?.includes("text/html")) {
           body = await handleHtmlContent(response, url.protocol, url.host, actualUrlStr);
       } else {
@@ -194,14 +201,17 @@ function ensureProtocol(url, defaultProtocol) {
 // Handle redirects
 function handleRedirect(response, body) {
   const location = new URL(response.headers.get('location'));
-  const modifiedLocation = `/${encodeURIComponent(location.toString())}`;
+  // Construct the proxy URL for the redirect location
+  const proxyUrl = `/${encodeURIComponent(location.href)}`;
+  
+  // Create a new Headers object to avoid mutating the original headers
+  const headers = new Headers(response.headers);
+  headers.set('Location', proxyUrl);
+  
   const newResponse = new Response(body, {
       status: response.status,
       statusText: response.statusText,
-      headers: {
-          ...response.headers,
-          'Location': modifiedLocation
-      }
+      headers: headers
   });
   // Add no-cache headers
   setNoCacheHeaders(newResponse.headers);
