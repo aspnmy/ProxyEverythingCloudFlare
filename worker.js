@@ -1,8 +1,22 @@
-// 黑名单数组
-const BLACKLIST = BKLS
 
-// bind的数组
-let BINDLIST = "";
+// 添加kv读取写入工具
+let BLACKLIST = [];
+let BINDLIST = [];
+
+export default {
+  async fetch(request, env, ctx) {
+    // 从 KV 中读取值
+    const blacklistStr = await env.BKLS_STORE.get("BKLS");
+    if (blacklistStr) {
+      BLACKLIST = blacklistStr.split(',').filter(item => item !== '');
+    } else {
+      BLACKLIST = [];
+    }
+    
+    // 处理请求
+    return handleRequest(request, env);
+  }
+};
 
 // 检查 URL 是否在黑名单中
 function isBlacklisted(url) {
@@ -40,7 +54,7 @@ addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request));
 });
 
-async function handleRequest(request) {
+async function handleRequest(request, env) {
   try {
       const url = new URL(request.url);
 
@@ -70,11 +84,7 @@ async function handleRequest(request) {
       // 检查目标 URL 是否包含非法参数
       if (hasIllegalParams(actualUrl)) {
           // 将非法URL添加到BINDLIST中
-          if (BINDLIST) {
-              BINDLIST += "," + actualUrlStr;
-          } else {
-              BINDLIST = actualUrlStr;
-          }
+          BINDLIST.push(actualUrlStr);
           
           return jsonResponse({
               error: 'Illegal parameters detected in URL.'
@@ -134,6 +144,17 @@ async function handleRequest(request) {
       return jsonResponse({
           error: error.message
       }, 500);
+  } finally {
+      // 将 BINDLIST 中的非法 URL 添加到 BLACKLIST 并更新 KV 存储
+      if (BINDLIST.length > 0) {
+          BLACKLIST = [...new Set([...BLACKLIST, ...BINDLIST])];
+          // 更新 KV 存储
+          if (env && env.BKLS_STORE) {
+              await env.BKLS_STORE.put("BKLS", BLACKLIST.join(','));
+          }
+          // 清空 BINDLIST
+          BINDLIST = [];
+      }
   }
 }
 

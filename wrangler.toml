@@ -5,27 +5,22 @@ compatibility_flags = [
     "nodejs_compat"
 ]
 
-[vars]
-BKLS = []
+# 通用KV配置（所有环境继承）
+kv_namespaces = [
+  { binding = "BKLS_STORE", id = "8a39fb44a72a4aec97921cfac597d7d4" }
+]
 
-# wrangler.toml (wrangler v3.88.0^)
+# 标记日志级别为INFO
 [observability.logs]
 enabled = true
 
-
-
 # 生产环境配置
 [env.production]
-name = "proxyeverything-cf"
-main = "worker.js"
-compatibility_date = "2024-01-01"
-compatibility_flags = [
-    "nodejs_compat"
+kv_namespaces = [
+  { binding = "BKLS_STORE", id = "8a39fb44a72a4aec97921cfac597d7d4" }
 ]
 
-# 环境变量
-[env.production.vars]
-BKLS=[]
+
 
 # 生产环境构建配置
 [env.production.build]

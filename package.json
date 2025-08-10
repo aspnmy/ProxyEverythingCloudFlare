@@ -6,7 +6,9 @@
     "scripts": {
         "setup": "yarn install",
         "login": "yarn wrangler login",
-        "dev": "npx wrangler dev",
+        "dev": "npx wrangler dev --env production",
+        "dev:remote": "npx wrangler dev --env production --x-remote-bindings --experimental-remote",
+        "dev:remote:worker": "npx wrangler dev --env production --remote=worker",       
         "debug": "npx wrangler deploy",
         "build:prod": "npx wrangler build --env production",
         "deploy:prod": "npx wrangler deploy --env production",
@@ -22,7 +24,8 @@
         "wrangler": "^4.0.0"
     },
     "dependencies": {
-        "cloudgatekeeper": "file:"
+        "cloudgatekeeper": "file:",
+        "yarn": "^1.22.22"
     },
     "engines": {
         "node": ">=20.14.0",
