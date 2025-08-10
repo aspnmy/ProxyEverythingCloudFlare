@@ -15,7 +15,7 @@ export default {
     }
     
     // 处理请求
-    return handleRequest(request, env);
+    return BLACKLIST;
   }
 };
 
