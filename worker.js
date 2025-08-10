@@ -55,9 +55,7 @@ function hasIllegalParams(url) {
   return illegalPatterns.some(pattern => pattern.test(urlStr));
 }
 
-addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request));
-});
+
 
 async function handleRequest(request, env) {
   try {
