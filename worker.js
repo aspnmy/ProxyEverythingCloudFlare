@@ -264,7 +264,7 @@ function getRootHtml() {
   <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js" as="script">
   <title>Proxy Everything 万站互联</title>
-  <link rel="icon" type="image/svg" href="https://about.gitea.com/gitea-text.svg" crossorigin="anonymous">
+  <link rel="icon" type="image/x-icon" href="https://image.cf.shdrr.org/favicon-02.ico" crossorigin="anonymous">
   <meta name="Description" content="Proxy Everything with CF Workers.">
   <meta name="keywords" content="CF Worker, CF Worker API, Cloudflare Workers, Cloudflare CDN, CDNs, CDN, CDNJS, Google Fonts">
   <meta property="og:url" content="https://gateway.cf.shdrr.org/">
@@ -275,10 +275,10 @@ function getRootHtml() {
   <meta property="og:locale" content="zh-CN">
   <meta property="og:title" content="Proxy Everything 万站互联">
   <meta property="og:description" content="Proxy Everything with CF Workers.">
-  <meta property="og:image" content="https://about.gitea.com/gitea-text.svg" crossorigin="anonymous">
+  <meta property="og:image" content="https://image.cf.shdrr.org/favicon-02.ico" crossorigin="anonymous">
   <meta name="robots" content="index, follow">
   <meta http-equiv="Content-Language" content="zh-CN">
-  <link rel="apple-touch-icon-precomposed" sizes="120x120" href="https://about.gitea.com/gitea-text.svg" crossorigin="anonymous">
+  <link rel="apple-touch-icon-precomposed" sizes="120x120" href="https://image.cf.shdrr.org/favicon-02.ico" crossorigin="anonymous">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
