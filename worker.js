@@ -147,6 +147,9 @@ async function handleRequest(request, env) {
       // 添加禁用缓存的头部
       setNoCacheHeaders(modifiedResponse.headers);
 
+      // 添加安全头部
+      modifiedResponse.headers.set('X-Content-Type-Options', 'nosniff');
+
       // 添加 CORS 头部，允许跨域访问
       setCorsHeaders(modifiedResponse.headers);
 
@@ -221,7 +224,7 @@ function filterHeaders(headers, filterFunc) {
 
 // 设置禁用缓存的头部
 function setNoCacheHeaders(headers) {
-  headers.set('Cache-Control', 'no-store');
+  headers.set('Cache-Control', 'no-store, must-revalidate');
 }
 
 // 设置 CORS 头部
