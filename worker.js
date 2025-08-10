@@ -1,126 +1,33 @@
+addEventListener('fetch', event => {
+  event.respondWith(handleRequest(event.request));
+});
 
-// Add KV read and write tools
-let BLACKLIST = [];
-let BINDLIST = [];
-
-export default {
-  async fetch(request, env, ctx) {
-    // Read values from KV
-    const blacklistStr = await env.BKLS_STORE.get("BKLS");
-    if (blacklistStr) {
-      // Remove single quotes from the string, then split by commas
-      BLACKLIST = blacklistStr.replace(/'/g, '').split(',').filter(item => item !== '');
-    } else {
-      BLACKLIST = [];
-    }
-    
-    return handleRequest(request, env);
-  }
-};
-
-// Check if the URL is in the blacklist
-function isBlacklisted(url) {
+async function handleRequest(request) {
   try {
-    const hostname = new URL(url).hostname;
-    return BLACKLIST.some(blocked => hostname.includes(blocked));
-  } catch (error) {
-    // If URL parsing fails, directly check if the original URL is in the blacklist
-    return BLACKLIST.some(blocked => url.includes(blocked));
-  }
-}
-
-// Check if the URL contains illegal parameters
-function hasIllegalParams(url) {
-  const illegalPatterns = [
-    /<script/i,
-    /javascript:/i,
-    /onload/i,
-    /onerror/i,
-    /onclick/i,
-    /onmouseover/i,
-    /onfocus/i,
-    /onblur/i,
-    /onsubmit/i,
-    /onreset/i,
-    /onselect/i,
-    /onchange/i,
-    /eval\s*\(/i,
-    /document\.cookie/i,
-    /document\.write/i,
-    /\.innerHTML/i,
-    /\.outerHTML/i
-  ];
-  
-  const urlStr = url.toString();
-  return illegalPatterns.some(pattern => pattern.test(urlStr));
-}
-
-
-
-async function handleRequest(request, env) {
-  try {
-      // Read values from KV
-      const blacklistStr = await env.BKLS_STORE.get("BKLS");
-      if (blacklistStr) {
-        // Remove single quotes from the string, then split by commas
-        BLACKLIST = blacklistStr.replace(/'/g, '').split(',').filter(item => item !== '');
-      } else {
-        BLACKLIST = [];
-      }
-      
       const url = new URL(request.url);
 
-      // If accessing the root directory, return HTML
+      // 如果访问根目录，返回HTML
       if (url.pathname === "/") {
-          const response = new Response(getRootHtml(), {
+          return new Response(getRootHtml(), {
               headers: {
-                  'Content-Type': 'text/html; charset=utf-8',
-                  'X-Content-Type-Options': 'nosniff'
+                  'Content-Type': 'text/html; charset=utf-8'
               }
           });
-          // Add no-cache headers
-          setNoCacheHeaders(response.headers);
-          return response;
       }
 
-      // Extract the target URL from the request path
+      // 从请求路径中提取目标 URL
       let actualUrlStr = decodeURIComponent(url.pathname.replace("/", ""));
 
-      // Determine if the user input URL has a protocol
+      // 判断用户输入的 URL 是否带有协议
       actualUrlStr = ensureProtocol(actualUrlStr, url.protocol);
-      
-      // Check domain length
-      const actualUrl = new URL(actualUrlStr);
-      if (actualUrl.hostname.length > 128) {
-          return jsonResponse({
-              error: 'Domain name length exceeds 128 characters.'
-          }, 400);
-      }
 
-      // Check if the target URL contains illegal parameters
-      if (hasIllegalParams(actualUrl)) {
-          // Add illegal URL to BINDLIST
-          BINDLIST.push(actualUrlStr);
-          
-          return jsonResponse({
-              error: 'Illegal parameters detected in URL.'
-          }, 400);
-      }
-
-      // Check if the target URL is in the blacklist
-      if (isBlacklisted(actualUrlStr)) {
-          return jsonResponse({
-              error: 'Access to this website is blocked.'
-          }, 403);
-      }
-
-      // Preserve query parameters
+      // 保留查询参数
       actualUrlStr += url.search;
 
-      // Create a new Headers object, excluding headers starting with 'cf-'
+      // 创建新 Headers 对象，排除以 'cf-' 开头的请求头
       const newHeaders = filterHeaders(request.headers, name => !name.startsWith('cf-'));
 
-      // Create a new request to access the target URL
+      // 创建一个新的请求以访问目标 URL
       const modifiedRequest = new Request(actualUrlStr, {
           headers: newHeaders,
           method: request.method,
@@ -128,153 +35,103 @@ async function handleRequest(request, env) {
           redirect: 'manual'
       });
 
-      // Initiate a request to the target URL
+      // 发起对目标 URL 的请求
       const response = await fetch(modifiedRequest);
       let body = response.body;
 
-      // Handle redirects
+      // 处理重定向
       if ([301, 302, 303, 307, 308].includes(response.status)) {
-          // For redirect responses, we need to handle the body properly
-          let redirectBody = response.body;
-          // For non-HTML content, we need to properly handle the response body
-          if (!response.headers.get("Content-Type")?.includes("text/html")) {
-              // Clone the response to avoid locking the body stream
-              const clonedResponse = response.clone();
-              redirectBody = await clonedResponse.arrayBuffer();
-          }
-          // Create a new Response object to modify the Location header
-          return handleRedirect(response, redirectBody);
+          body = response.body;
+          // 创建新的 Response 对象以修改 Location 头部
+          return handleRedirect(response, body);
       } else if (response.headers.get("Content-Type")?.includes("text/html")) {
           body = await handleHtmlContent(response, url.protocol, url.host, actualUrlStr);
-      } else {
-          // For non-HTML content, we need to properly handle the response body
-          // Clone the response to avoid locking the body stream
-          const clonedResponse = response.clone();
-          body = await clonedResponse.arrayBuffer();
       }
 
-      // Create the modified response object
-      // Create a new Headers object to avoid any potential issues with the original headers
-      const responseHeaders = new Headers(response.headers);
-      // Remove Content-Length header as it will be automatically set by the runtime
-      responseHeaders.delete('Content-Length');
+      // 创建修改后的响应对象
       const modifiedResponse = new Response(body, {
           status: response.status,
           statusText: response.statusText,
-          headers: responseHeaders
+          headers: response.headers
       });
 
-      // Add no-cache headers
+      // 添加禁用缓存的头部
       setNoCacheHeaders(modifiedResponse.headers);
 
-      // Add security headers
-      modifiedResponse.headers.set('X-Content-Type-Options', 'nosniff');
-
-      // Add CORS headers to allow cross-origin access
+      // 添加 CORS 头部，允许跨域访问
       setCorsHeaders(modifiedResponse.headers);
 
       return modifiedResponse;
   } catch (error) {
-      // If an error occurs when requesting the target address, return a response with the error message and status code 500 (server error)
+      // 如果请求目标地址时出现错误，返回带有错误消息的响应和状态码 500（服务器错误）
       return jsonResponse({
           error: error.message
       }, 500);
-  } finally {
-      // Add illegal URLs from BINDLIST to BLACKLIST and update KV storage
-      if (BINDLIST.length > 0) {
-          BLACKLIST = [...new Set([...BLACKLIST, ...BINDLIST])];
-          // Update KV storage, ensuring the data format is 'url1','url2'
-          if (env && env.BKLS_STORE) {
-              await env.BKLS_STORE.put("BKLS", BLACKLIST.map(url => `'${url}'`).join(','));
-          }
-          // Clear BINDLIST
-          BINDLIST = [];
-      }
   }
 }
 
-// Ensure the URL has a protocol
+// 确保 URL 带有协议
 function ensureProtocol(url, defaultProtocol) {
   return url.startsWith("http://") || url.startsWith("https://") ? url : defaultProtocol + "//" + url;
 }
 
-// Handle redirects
+// 处理重定向
 function handleRedirect(response, body) {
   const location = new URL(response.headers.get('location'));
-  // Construct the proxy URL for the redirect location
-  const proxyUrl = `/${encodeURIComponent(location.href)}`;
-  
-  // Create a new Headers object to avoid mutating the original headers
-  const headers = new Headers(response.headers);
-  headers.set('Location', proxyUrl);
-  
-  const newResponse = new Response(body, {
+  const modifiedLocation = `/${encodeURIComponent(location.toString())}`;
+  return new Response(body, {
       status: response.status,
       statusText: response.statusText,
-      headers: headers
+      headers: {
+          ...response.headers,
+          'Location': modifiedLocation
+      }
   });
-  // Add no-cache headers
-  setNoCacheHeaders(newResponse.headers);
-  // Add security headers
-  newResponse.headers.set('X-Content-Type-Options', 'nosniff');
-  return newResponse;
 }
 
-// Handle relative paths in HTML content
+// 处理 HTML 内容中的相对路径
 async function handleHtmlContent(response, protocol, host, actualUrlStr) {
   const originalText = await response.text();
   const regex = new RegExp('((href|src|action)=["\'])/(?!/)', 'g');
   let modifiedText = replaceRelativePaths(originalText, protocol, host, new URL(actualUrlStr).origin);
-  const newResponse = new Response(modifiedText, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers
-  });
-  // Add no-cache headers
-  setNoCacheHeaders(newResponse.headers);
-  // Add security headers
-  newResponse.headers.set('X-Content-Type-Options', 'nosniff');
-  return newResponse;
+
+  return modifiedText;
 }
 
-// Replace relative paths in HTML content
+// 替换 HTML 内容中的相对路径
 function replaceRelativePaths(text, protocol, host, origin) {
   const regex = new RegExp('((href|src|action)=["\'])/(?!/)', 'g');
   return text.replace(regex, `$1${protocol}//${host}/${origin}/`);
 }
 
-// Return JSON formatted response
+// 返回 JSON 格式的响应
 function jsonResponse(data, status) {
-  const response = new Response(JSON.stringify(data), {
+  return new Response(JSON.stringify(data), {
       status: status,
       headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          'X-Content-Type-Options': 'nosniff'
+          'Content-Type': 'application/json; charset=utf-8'
       }
   });
-  // Add no-cache headers
-  setNoCacheHeaders(response.headers);
-  return response;
 }
 
-// Filter request headers
+// 过滤请求头
 function filterHeaders(headers, filterFunc) {
   return new Headers([...headers].filter(([name]) => filterFunc(name)));
 }
 
-// Set no-cache headers
+// 设置禁用缓存的头部
 function setNoCacheHeaders(headers) {
-  headers.set('Cache-Control', 'no-store, must-revalidate');
+  headers.set('Cache-Control', 'no-store');
 }
 
-// Set CORS headers
+// 设置 CORS 头部
 function setCorsHeaders(headers) {
   headers.set('Access-Control-Allow-Origin', '*');
   headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
   headers.set('Access-Control-Allow-Headers', '*');
 }
 
-// Return HTML for the root directory
+// 返回根目录的 HTML
 function getRootHtml() {
   return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -413,3 +270,5 @@ function getRootHtml() {
 </body>
 </html>`;
 }
+
+
