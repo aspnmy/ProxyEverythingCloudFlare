@@ -264,7 +264,7 @@ function getRootHtml() {
   <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js" as="script">
   <title>Proxy Everything 万站互联</title>
-  <link rel="icon" type="image/png" href="https://about.gitea.com/gitea-text.svg" crossorigin="anonymous">
+  <link rel="icon" type="image/svg" href="https://about.gitea.com/gitea-text.svg" crossorigin="anonymous">
   <meta name="Description" content="Proxy Everything with CF Workers.">
   <meta name="keywords" content="CF Worker, CF Worker API, Cloudflare Workers, Cloudflare CDN, CDNs, CDN, CDNJS, Google Fonts">
   <meta property="og:url" content="https://gateway.cf.shdrr.org/">
