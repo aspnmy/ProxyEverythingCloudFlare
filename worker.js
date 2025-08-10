@@ -1,14 +1,14 @@
 
-// 添加kv读取写入工具
+// Add KV read and write tools
 let BLACKLIST = [];
 let BINDLIST = [];
 
 export default {
   async fetch(request, env, ctx) {
-    // 从 KV 中读取值
+    // Read values from KV
     const blacklistStr = await env.BKLS_STORE.get("BKLS");
     if (blacklistStr) {
-      // 移除字符串中的单引号，然后按逗号分割
+      // Remove single quotes from the string, then split by commas
       BLACKLIST = blacklistStr.replace(/'/g, '').split(',').filter(item => item !== '');
     } else {
       BLACKLIST = [];
@@ -18,18 +18,18 @@ export default {
   }
 };
 
-// 检查 URL 是否在黑名单中
+// Check if the URL is in the blacklist
 function isBlacklisted(url) {
   try {
     const hostname = new URL(url).hostname;
     return BLACKLIST.some(blocked => hostname.includes(blocked));
   } catch (error) {
-    // 如果 URL 解析失败，直接检查原始 URL 是否在黑名单中
+    // If URL parsing fails, directly check if the original URL is in the blacklist
     return BLACKLIST.some(blocked => url.includes(blocked));
   }
 }
 
-// 检查 URL 是否包含非法参数
+// Check if the URL contains illegal parameters
 function hasIllegalParams(url) {
   const illegalPatterns = [
     /<script/i,
@@ -59,10 +59,10 @@ function hasIllegalParams(url) {
 
 async function handleRequest(request, env) {
   try {
-      // 从 KV 中读取值
+      // Read values from KV
       const blacklistStr = await env.BKLS_STORE.get("BKLS");
       if (blacklistStr) {
-        // 移除字符串中的单引号，然后按逗号分割
+        // Remove single quotes from the string, then split by commas
         BLACKLIST = blacklistStr.replace(/'/g, '').split(',').filter(item => item !== '');
       } else {
         BLACKLIST = [];
@@ -70,7 +70,7 @@ async function handleRequest(request, env) {
       
       const url = new URL(request.url);
 
-      // 如果访问根目录，返回HTML
+      // If accessing the root directory, return HTML
       if (url.pathname === "/") {
           const response = new Response(getRootHtml(), {
               headers: {
@@ -78,18 +78,18 @@ async function handleRequest(request, env) {
                   'X-Content-Type-Options': 'nosniff'
               }
           });
-          // 添加禁用缓存的头部
+          // Add no-cache headers
           setNoCacheHeaders(response.headers);
           return response;
       }
 
-      // 从请求路径中提取目标 URL
+      // Extract the target URL from the request path
       let actualUrlStr = decodeURIComponent(url.pathname.replace("/", ""));
 
-      // 判断用户输入的 URL 是否带有协议
+      // Determine if the user input URL has a protocol
       actualUrlStr = ensureProtocol(actualUrlStr, url.protocol);
       
-      // 检查域名长度
+      // Check domain length
       const actualUrl = new URL(actualUrlStr);
       if (actualUrl.hostname.length > 128) {
           return jsonResponse({
@@ -97,9 +97,9 @@ async function handleRequest(request, env) {
           }, 400);
       }
 
-      // 检查目标 URL 是否包含非法参数
+      // Check if the target URL contains illegal parameters
       if (hasIllegalParams(actualUrl)) {
-          // 将非法URL添加到BINDLIST中
+          // Add illegal URL to BINDLIST
           BINDLIST.push(actualUrlStr);
           
           return jsonResponse({
@@ -107,20 +107,20 @@ async function handleRequest(request, env) {
           }, 400);
       }
 
-      // 检查目标 URL 是否在黑名单中
+      // Check if the target URL is in the blacklist
       if (isBlacklisted(actualUrlStr)) {
           return jsonResponse({
               error: 'Access to this website is blocked.'
           }, 403);
       }
 
-      // 保留查询参数
+      // Preserve query parameters
       actualUrlStr += url.search;
 
-      // 创建新 Headers 对象，排除以 'cf-' 开头的请求头
+      // Create a new Headers object, excluding headers starting with 'cf-'
       const newHeaders = filterHeaders(request.headers, name => !name.startsWith('cf-'));
 
-      // 创建一个新的请求以访问目标 URL
+      // Create a new request to access the target URL
       const modifiedRequest = new Request(actualUrlStr, {
           headers: newHeaders,
           method: request.method,
@@ -128,61 +128,61 @@ async function handleRequest(request, env) {
           redirect: 'manual'
       });
 
-      // 发起对目标 URL 的请求
+      // Initiate a request to the target URL
       const response = await fetch(modifiedRequest);
       let body = response.body;
 
-      // 处理重定向
+      // Handle redirects
       if ([301, 302, 303, 307, 308].includes(response.status)) {
           body = response.body;
-          // 创建新的 Response 对象以修改 Location 头部
+          // Create a new Response object to modify the Location header
           return handleRedirect(response, body);
       } else if (response.headers.get("Content-Type")?.includes("text/html")) {
           body = await handleHtmlContent(response, url.protocol, url.host, actualUrlStr);
       }
 
-      // 创建修改后的响应对象
+      // Create the modified response object
       const modifiedResponse = new Response(body, {
           status: response.status,
           statusText: response.statusText,
           headers: response.headers
       });
 
-      // 添加禁用缓存的头部
+      // Add no-cache headers
       setNoCacheHeaders(modifiedResponse.headers);
 
-      // 添加安全头部
+      // Add security headers
       modifiedResponse.headers.set('X-Content-Type-Options', 'nosniff');
 
-      // 添加 CORS 头部，允许跨域访问
+      // Add CORS headers to allow cross-origin access
       setCorsHeaders(modifiedResponse.headers);
 
       return modifiedResponse;
   } catch (error) {
-      // 如果请求目标地址时出现错误，返回带有错误消息的响应和状态码 500（服务器错误）
+      // If an error occurs when requesting the target address, return a response with the error message and status code 500 (server error)
       return jsonResponse({
           error: error.message
       }, 500);
   } finally {
-      // 将 BINDLIST 中的非法 URL 添加到 BLACKLIST 并更新 KV 存储
+      // Add illegal URLs from BINDLIST to BLACKLIST and update KV storage
       if (BINDLIST.length > 0) {
           BLACKLIST = [...new Set([...BLACKLIST, ...BINDLIST])];
-          // 更新 KV 存储，确保数据格式为 'url1','url2'
+          // Update KV storage, ensuring the data format is 'url1','url2'
           if (env && env.BKLS_STORE) {
               await env.BKLS_STORE.put("BKLS", BLACKLIST.map(url => `'${url}'`).join(','));
           }
-          // 清空 BINDLIST
+          // Clear BINDLIST
           BINDLIST = [];
       }
   }
 }
 
-// 确保 URL 带有协议
+// Ensure the URL has a protocol
 function ensureProtocol(url, defaultProtocol) {
   return url.startsWith("http://") || url.startsWith("https://") ? url : defaultProtocol + "//" + url;
 }
 
-// 处理重定向
+// Handle redirects
 function handleRedirect(response, body) {
   const location = new URL(response.headers.get('location'));
   const modifiedLocation = `/${encodeURIComponent(location.toString())}`;
@@ -194,14 +194,14 @@ function handleRedirect(response, body) {
           'Location': modifiedLocation
       }
   });
-  // 添加禁用缓存的头部
+  // Add no-cache headers
   setNoCacheHeaders(newResponse.headers);
-  // 添加安全头部
+  // Add security headers
   newResponse.headers.set('X-Content-Type-Options', 'nosniff');
   return newResponse;
 }
 
-// 处理 HTML 内容中的相对路径
+// Handle relative paths in HTML content
 async function handleHtmlContent(response, protocol, host, actualUrlStr) {
   const originalText = await response.text();
   const regex = new RegExp('((href|src|action)=["\'])/(?!/)', 'g');
@@ -211,20 +211,20 @@ async function handleHtmlContent(response, protocol, host, actualUrlStr) {
       statusText: response.statusText,
       headers: response.headers
   });
-  // 添加禁用缓存的头部
+  // Add no-cache headers
   setNoCacheHeaders(newResponse.headers);
-  // 添加安全头部
+  // Add security headers
   newResponse.headers.set('X-Content-Type-Options', 'nosniff');
   return newResponse;
 }
 
-// 替换 HTML 内容中的相对路径
+// Replace relative paths in HTML content
 function replaceRelativePaths(text, protocol, host, origin) {
   const regex = new RegExp('((href|src|action)=["\'])/(?!/)', 'g');
   return text.replace(regex, `$1${protocol}//${host}/${origin}/`);
 }
 
-// 返回 JSON 格式的响应
+// Return JSON formatted response
 function jsonResponse(data, status) {
   const response = new Response(JSON.stringify(data), {
       status: status,
@@ -233,29 +233,29 @@ function jsonResponse(data, status) {
           'X-Content-Type-Options': 'nosniff'
       }
   });
-  // 添加禁用缓存的头部
+  // Add no-cache headers
   setNoCacheHeaders(response.headers);
   return response;
 }
 
-// 过滤请求头
+// Filter request headers
 function filterHeaders(headers, filterFunc) {
   return new Headers([...headers].filter(([name]) => filterFunc(name)));
 }
 
-// 设置禁用缓存的头部
+// Set no-cache headers
 function setNoCacheHeaders(headers) {
   headers.set('Cache-Control', 'no-store, must-revalidate');
 }
 
-// 设置 CORS 头部
+// Set CORS headers
 function setCorsHeaders(headers) {
   headers.set('Access-Control-Allow-Origin', '*');
   headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
   headers.set('Access-Control-Allow-Headers', '*');
 }
 
-// 返回根目录的 HTML
+// Return HTML for the root directory
 function getRootHtml() {
   return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -263,17 +263,17 @@ function getRootHtml() {
   <meta charset="UTF-8">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js" as="script">
-  <title>Proxy Everything 万站互联</title>
+  <title>Proxy Everything</title>
   <link rel="icon" type="image/x-icon" href="https://image.cf.shdrr.org/favicon-02.ico" crossorigin="anonymous">
   <meta name="Description" content="Proxy Everything with CF Workers.">
   <meta name="keywords" content="CF Worker, CF Worker API, Cloudflare Workers, Cloudflare CDN, CDNs, CDN, CDNJS, Google Fonts">
   <meta property="og:url" content="https://gateway.cf.shdrr.org/">
-  <meta property="og:site_name" content="Proxy Everything 万站互联">
+  <meta property="og:site_name" content="Proxy Everything">
   <meta property="og:description" content="Proxy Everything with CF Workers.">
   <meta property="og:title" content="Proxy Everything with CF Workers.">
   <meta property="og:description" content="Proxy Everything with CF Workers.">
   <meta property="og:locale" content="zh-CN">
-  <meta property="og:title" content="Proxy Everything 万站互联">
+  <meta property="og:title" content="Proxy Everything">
   <meta property="og:description" content="Proxy Everything with CF Workers.">
   <meta property="og:image" content="https://image.cf.shdrr.org/favicon-02.ico" crossorigin="anonymous">
   <meta name="robots" content="index, follow">
@@ -366,15 +366,15 @@ function getRootHtml() {
               <div class="col s12 m8 offset-m2 l6 offset-l3">
                   <div class="card">
                       <div class="card-content">
-                          <span class="card-title center-align"><i class="material-icons left">link</i>Proxy Everything 万站互联</span>
+                          <span class="card-title center-align"><i class="material-icons left">link</i>Proxy Everything</span>
                           <form id="urlForm" onsubmit="redirectToProxy(event)">
                               <div class="input-field">
-                                  <input type="text" id="targetUrl" placeholder="在此输入目标地址,不需要输入协议头" required>
-                                  <label for="targetUrl">目标地址</label>
+                                  <input type="text" id="targetUrl" placeholder="Enter target URL here, no need to input protocol header" required>
+                                  <label for="targetUrl">Target URL</label>
                               </div>
-                              <button type="submit" class="btn waves-effect waves-light teal darken-2 full-width">跳转</button>
-                               <div class="warning">使用说明：被转发的域名长度必须小于128个字符串，请不要转发带有渗入代码的非法链接</div>
-                               <div class="warning">更多黑名单网址信息，查看github项目：https://github.com/aspnmy/CN-Malicious-website-list.git</div>
+                              <button type="submit" class="btn waves-effect waves-light teal darken-2 full-width">Go</button>
+                               <div class="warning">Instructions: The forwarded domain name length must be less than 128 characters. Please do not forward illegal links with injected code.</div>
+                               <div class="warning">For more blacklist URL information, check the GitHub project: https://github.com/aspnmy/CN-Malicious-website-list.git</div>
                           </form>
                       </div>
                   </div>
